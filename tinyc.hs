@@ -1,6 +1,6 @@
 module TinyC where 
  import Data.Maybe
-
+ 
  type Identificador = String
 
  -- Expresiones
@@ -52,3 +52,14 @@ module TinyC where
 
 -- Estados de la Máquina C
  data State = E Pila Env Env Program | R Pila Env Env Program deriving(Show,Eq)
+
+
+-- Función look que busca un identificador en el ambiente
+ look :: Env -> Identificador -> Maybe Value
+ look MtEnv _ = Nothing
+ look (As (id, val) env) x
+    | x == id = Just val
+    | otherwise = look env x
+ look (Star env1 env2) x
+    | look env1 x == Nothing = look env2 x
+    | otherwise = look env1 x
