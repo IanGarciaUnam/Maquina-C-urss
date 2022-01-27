@@ -63,3 +63,12 @@ module TinyC where
  look (Star env1 env2) x
     | look env1 x == Nothing = look env2 x
     | otherwise = look env1 x
+
+ change :: Env -> Identificador -> Value -> Maybe Env
+ change MtEnv _ _ = Nothing
+ change (As (id, val) env) x v
+    | id == x = Just (As (id, v) env)
+    | otherwise = change env x v
+ change (Star env1 env2) x v
+    | change env1 x v == Nothing = change env2 x v
+    | otherwise = change env1 x v
