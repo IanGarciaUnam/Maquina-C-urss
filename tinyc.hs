@@ -76,6 +76,7 @@ module TinyC where
 
 -- Función trans que define el sistema de transiciones
  trans :: State -> State
+ 
  -- Declaraciones
  trans (E p l g (Right (Vardec id exp))) = E (Top (VardecM id) p) l g (Left exp)
  trans (E (Top (VardecM id) p) l g (Left (Num n))) = case look g id of
@@ -88,6 +89,7 @@ module TinyC where
     Just val -> error "La variable ya había sido definida"
     Nothing -> E p l (As (id, F lid stm) g) (Right MtP)
  trans (E p l g (Right (Fundec id li stm))) = E p l (As (id, F li stm) g) (Right MtP)
+ 
  -- Asignaciones
  trans (E p l g (Right (Asig id exp))) = E (Top (AsigM id) p) l g (Left exp)
  trans (E (Top (AsigM id) p) l g (Left (Num n))) = case change g id (N n) of
@@ -105,3 +107,14 @@ module TinyC where
     Nothing -> case change l id (F lid stm) of
        Just lprime -> E p lprime g (Right MtP)
        Nothing -> error "La variable no había sido definida."
+ 
+ -- Variables
+ trans (E p g l (Left (Id id))) = case look g id of
+    Just (N n) -> E p g l (Left (Num n))
+    Just (B b) -> E p g l (Left (Bo b))
+    Just (F lid stm) -> E p g l (Left (Fun lid stm))
+    Nothing -> case look l id of
+      Just (N n) -> E p g l (Left (Num n))
+      Just (B b) -> E p g l (Left (Bo b))
+      Just (F lid stm) -> E p g l (Left (Fun lid stm))
+      Nothing -> error "La variable no esta definida."
