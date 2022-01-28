@@ -76,8 +76,32 @@ module TinyC where
 
 -- Función trans que define el sistema de transiciones
  trans :: State -> State
- trans (E p l g (Right (Vardec id val))) = E (Top (VardecM id) p) l g (Left val)
- trans (E (Top (VardecM id) p) l g (Left val)) = case look g id of
-    Just value -> error "La variable ya había sido definida"
-    Nothing -> (E p l g (Right MtP))
+ -- Declaraciones
+ trans (E p l g (Right (Vardec id exp))) = E (Top (VardecM id) p) l g (Left exp)
+ trans (E (Top (VardecM id) p) l g (Left (Num n))) = case look g id of
+    Just val -> error "La variable ya había sido definida"
+    Nothing -> E p l (As (id, N n) g) (Right MtP)
+ trans (E (Top (VardecM id) p) l g (Left (Bo b))) = case look g id of
+    Just val -> error "La variable ya había sido definida"
+    Nothing -> E p l (As (id, B b) g) (Right MtP)
+ trans (E (Top (VardecM id) p) l g (Left (Fun lid stm))) = case look g id of
+    Just val -> error "La variable ya había sido definida"
+    Nothing -> E p l (As (id, F lid stm) g) (Right MtP)
  trans (E p l g (Right (Fundec id li stm))) = E p l (As (id, F li stm) g) (Right MtP)
+ -- Asignaciones
+ trans (E p l g (Right (Asig id exp))) = E (Top (AsigM id) p) l g (Left exp)
+ trans (E (Top (AsigM id) p) l g (Left (Num n))) = case change g id (N n) of
+    Just gprime -> E p l gprime (Right MtP)
+    Nothing -> case change l id (N n) of
+       Just lprime -> E p lprime g (Right MtP)
+       Nothing -> error "La variable no había sido definida."
+ trans (E (Top (AsigM id) p) l g (Left (Bo b))) = case change g id (B b) of
+    Just gprime -> E p l gprime (Right MtP)
+    Nothing -> case change l id (B b) of
+       Just lprime -> E p lprime g (Right MtP)
+       Nothing -> error "La variable no había sido definida."
+ trans (E (Top (AsigM id) p) l g (Left (Fun lid stm))) = case change g id (F lid stm) of
+    Just gprime -> E p l gprime (Right MtP)
+    Nothing -> case change l id (F lid stm) of
+       Just lprime -> E p lprime g (Right MtP)
+       Nothing -> error "La variable no había sido definida."
