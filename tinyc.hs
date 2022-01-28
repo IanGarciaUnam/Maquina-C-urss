@@ -79,64 +79,70 @@ module TinyC where
  
  -- Declaraciones
  trans (E p l g (Right (Vardec id exp))) = E (Top (VardecM id) p) l g (Left exp)
- trans (E (Top (VardecM id) p) l g (Left (Num n))) = case look g id of
+ trans (R (Top (VardecM id) p) l g (Left (Num n))) = case look g id of
     Just val -> error "La variable ya había sido definida"
-    Nothing -> E p l (As (id, N n) g) (Right MtP)
- trans (E (Top (VardecM id) p) l g (Left (Bo b))) = case look g id of
+    Nothing -> R p l (As (id, N n) g) (Right MtP)
+ trans (R (Top (VardecM id) p) l g (Left (Bo b))) = case look g id of
     Just val -> error "La variable ya había sido definida"
-    Nothing -> E p l (As (id, B b) g) (Right MtP)
- trans (E (Top (VardecM id) p) l g (Left (Fun lid stm))) = case look g id of
+    Nothing -> R p l (As (id, B b) g) (Right MtP)
+ trans (R (Top (VardecM id) p) l g (Left (Fun lid stm))) = case look g id of
     Just val -> error "La variable ya había sido definida"
-    Nothing -> E p l (As (id, F lid stm) g) (Right MtP)
- trans (E p l g (Right (Fundec id li stm))) = E p l (As (id, F li stm) g) (Right MtP)
+    Nothing -> R p l (As (id, F lid stm) g) (Right MtP)
+ trans (E p l g (Right (Fundec id li stm))) = R p l (As (id, F li stm) g) (Right MtP)
  
  -- Asignaciones
  trans (E p l g (Right (Asig id exp))) = E (Top (AsigM id) p) l g (Left exp)
- trans (E (Top (AsigM id) p) l g (Left (Num n))) = case change g id (N n) of
-    Just gprime -> E p l gprime (Right MtP)
+ trans (R (Top (AsigM id) p) l g (Left (Num n))) = case change g id (N n) of
+    Just gprime -> R p l gprime (Right MtP)
     Nothing -> case change l id (N n) of
-       Just lprime -> E p lprime g (Right MtP)
+       Just lprime -> R p lprime g (Right MtP)
        Nothing -> error "La variable no había sido definida."
- trans (E (Top (AsigM id) p) l g (Left (Bo b))) = case change g id (B b) of
-    Just gprime -> E p l gprime (Right MtP)
+ trans (R (Top (AsigM id) p) l g (Left (Bo b))) = case change g id (B b) of
+    Just gprime -> R p l gprime (Right MtP)
     Nothing -> case change l id (B b) of
-       Just lprime -> E p lprime g (Right MtP)
+       Just lprime -> R p lprime g (Right MtP)
        Nothing -> error "La variable no había sido definida."
- trans (E (Top (AsigM id) p) l g (Left (Fun lid stm))) = case change g id (F lid stm) of
-    Just gprime -> E p l gprime (Right MtP)
+ trans (R (Top (AsigM id) p) l g (Left (Fun lid stm))) = case change g id (F lid stm) of
+    Just gprime -> R p l gprime (Right MtP)
     Nothing -> case change l id (F lid stm) of
-       Just lprime -> E p lprime g (Right MtP)
+       Just lprime -> R p lprime g (Right MtP)
        Nothing -> error "La variable no había sido definida."
  
  -- Variables
  trans (E p g l (Left (Id id))) = case look g id of
-    Just (N n) -> E p g l (Left (Num n))
-    Just (B b) -> E p g l (Left (Bo b))
-    Just (F lid stm) -> E p g l (Left (Fun lid stm))
+    Just (N n) -> R p g l (Left (Num n))
+    Just (B b) -> R p g l (Left (Bo b))
+    Just (F lid stm) -> R p g l (Left (Fun lid stm))
     Nothing -> case look l id of
-      Just (N n) -> E p g l (Left (Num n))
-      Just (B b) -> E p g l (Left (Bo b))
-      Just (F lid stm) -> E p g l (Left (Fun lid stm))
+      Just (N n) -> R p g l (Left (Num n))
+      Just (B b) -> R p g l (Left (Bo b))
+      Just (F lid stm) -> R p g l (Left (Fun lid stm))
       Nothing -> error "La variable no esta definida."
 
  -- Secuencia
  trans (E p l g (Right (Secu s1 s2))) = E (Top (SecuM s2) p) l g (Right s1)
- trans (E (Top (SecuM s2) p) l g (Right MtP)) = E p l g (Right s2)
+ trans (R (Top (SecuM s2) p) l g (Right MtP)) = E p l g (Right s2)
 
  -- Condicionales
  trans (E p l g (Right (If exp s1 s2))) = E (Top (IfM s1 s2) p) l g (Left exp)
- trans (E (Top (IfM s1 s2) p) l g (Left exp))
+ trans (R (Top (IfM s1 s2) p) l g (Left exp))
    | exp == Bo True = E p l g (Right s1)
    | exp == Bo False = E p l g (Right s2)
    | otherwise = error "La guarda del if es inválida."
  trans (E p l g (Right (IfO exp stm))) = E (Top (IfOM stm) p) l g (Left exp)
- trans (E (Top (IfOM stm) p) l g (Left exp))
+ trans (R (Top (IfOM stm) p) l g (Left exp))
    | exp == Bo True = E p l g (Right stm)
-   | exp == Bo False = E p l g (Right MtP)
+   | exp == Bo False = R p l g (Right MtP)
    | otherwise = error "La guarda del if es inválida."
 
  -- While
  trans (E p l g (Right (While exp stm))) = E p l g (Right (IfO exp (Secu stm (While exp stm))))
+
+ -- Return
+ trans (E p g l (Right (Return exp))) = E (Top ReturnM p) g l (Left exp)
+ trans (R (Top ReturnM p) (Star g l1) l2 e@(Left (Num n))) = R p l1 g e
+ trans (R (Top ReturnM p) (Star g l1) l2 e@(Left (Bo b))) = R p l1 g e
+ trans (R (Top ReturnM p) (Star g l1) l2 e@(Left (Fun id stm))) = R p l1 g e
 
  -- Momentaneo
  trans _ = error "Estado inválido"
