@@ -64,6 +64,7 @@ module TinyC where
     | look env1 x == Nothing = look env2 x
     | otherwise = look env1 x
 
+-- Función look que modifica el valor asociado a un identificador en el ambiente
  change :: Env -> Identificador -> Value -> Maybe Env
  change MtEnv _ _ = Nothing
  change (As (id, val) env) x v
@@ -72,3 +73,11 @@ module TinyC where
  change (Star env1 env2) x v
     | change env1 x v == Nothing = change env2 x v
     | otherwise = change env1 x v
+
+-- Función trans que define el sistema de transiciones
+ trans :: State -> State
+ trans (E p l g (Right (Vardec id val))) = E (Top (VardecM id) p) l g (Left val)
+ trans (E (Top (VardecM id) p) l g (Left val)) = case look g id of
+    Just value -> error "La variable ya había sido definida"
+    Nothing -> (E p l g (Right MtP))
+ trans (E p l g (Right (Fundec id li stm))) = E p l (As (id, F li stm) g) (Right MtP)
