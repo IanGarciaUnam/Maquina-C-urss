@@ -135,5 +135,8 @@ module TinyC where
    | exp == Bo False = E p l g (Right MtP)
    | otherwise = error "La guarda del if es inválida."
 
+ -- While
+ trans (E p l g (Right (While exp stm))) = E p l g (Right (IfO exp (Secu stm (While exp stm))))
+
  -- Momentaneo
  trans _ = error "Estado inválido"
