@@ -121,7 +121,19 @@ module TinyC where
 
  -- Secuencia
  trans (E p l g (Right (Secu s1 s2))) = E (Top (SecuM s2) p) l g (Right s1)
- trans (E (Top (SecuM s2) p) l g (Right MtP)) = E p l g (Right s2) 
+ trans (E (Top (SecuM s2) p) l g (Right MtP)) = E p l g (Right s2)
+
+ -- Condicionales
+ trans (E p l g (Right (If exp s1 s2))) = E (Top (IfM s1 s2) p) l g (Left exp)
+ trans (E (Top (IfM s1 s2) p) l g (Left exp))
+   | exp == Bo True = E p l g (Right s1)
+   | exp == Bo False = E p l g (Right s2)
+   | otherwise = error "La guarda del if es inválida."
+ trans (E p l g (Right (IfO exp stm))) = E (Top (IfOM stm) p) l g (Left exp)
+ trans (E (Top (IfOM stm) p) l g (Left exp))
+   | exp == Bo True = E p l g (Right stm)
+   | exp == Bo False = E p l g (Right MtP)
+   | otherwise = error "La guarda del if es inválida."
 
  -- Momentaneo
  trans _ = error "Estado inválido"
