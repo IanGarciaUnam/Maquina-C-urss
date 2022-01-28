@@ -118,3 +118,10 @@ module TinyC where
       Just (B b) -> E p g l (Left (Bo b))
       Just (F lid stm) -> E p g l (Left (Fun lid stm))
       Nothing -> error "La variable no esta definida."
+
+ -- Secuencia
+ trans (E p l g (Right (Secu s1 s2))) = E (Top (SecuM s2) p) l g (Right s1)
+ trans (E (Top (SecuM s2) p) l g (Right MtP)) = E p l g (Right s2) 
+
+ -- Momentaneo
+ trans _ = error "Estado inválido"
