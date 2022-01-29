@@ -215,7 +215,7 @@ module TinyC where
  trans (R (Top ReturnM p) (Star g l1) l2 e@(Left (Bo b))) = R p l1 g e
  trans (R (Top ReturnM p) (Star g l1) l2 e@(Left (Fun id stm))) = R p l1 g e
 
- -- Momentaneo
+ -- Estado de error
  trans _ = error "Estado inválido"
 
  {-
